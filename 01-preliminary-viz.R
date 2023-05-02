@@ -1,0 +1,45 @@
+
+
+#### Visualizing the corn mycotoxin data
+
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(cowplot)
+theme_set(theme_cowplot())
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+corn_raw <- read_excel("data-raw/2023-04-13 - Helen Booker DON Survey Lat Long Results 2011-2022.xlsx")
+
+unique(corn$VOM)
+
+corn <- corn_raw %>% 
+	mutate(VOM = ifelse(VOM == "BDL", "0.000001", VOM)) %>% 
+	mutate(VOM = ifelse(VOM == "BDl", "0.000001", VOM)) %>% 
+	filter(VOM != "<0.2") %>% 
+	filter(VOM != ".") %>% 
+	mutate(VOM = as.numeric(VOM)) %>% 
+	clean_names()
+
+
+corn %>% 
+	ggplot(aes(x = as.factor(year), y = vom)) + geom_point()
+
+corn %>% 
+	ggplot(aes(x = vom)) +geom_histogram() + facet_wrap( ~ year)
+
+corn2 <- corn %>% 
+	filter(year < 2017)
+
+
+ggplot(data = world) +
+	geom_sf() +
+	geom_point(data = corn2, aes(x = raw_long, y = raw_lat, color = vom), size = 4, 
+			   shape = 19) + scale_color_viridis_c() +
+	coord_sf(xlim = c(-84, -73), ylim = c(41, 46), expand = FALSE) + facet_wrap( ~ year)
+
+		   
